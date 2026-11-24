@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const db = require('./config/connection');
 const passport = require('./config/passport');
+const routes = require('./routes');
 
 // Initialize the Express application
 const app = express();
@@ -19,6 +20,9 @@ app.use(passport.initialize());
 app.get('/', (req, res) => {
     res.json({ message: 'Secure Web Portal API is running' });
 });
+
+// Mount application routes
+app.use(routes);
 
 // Start the server after the database connection is established
 db.once('open', () => {
