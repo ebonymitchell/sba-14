@@ -84,5 +84,103 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Update an existing bookmark
+router.put('/:id', async (req, res) => {
+    try {
+        // Validate the bookmark ID
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                message: 'Invalid bookmark ID',
+            });
+        }
+
+        const bookmark = await Bookmark.findById(req.params.id);
+
+        // Handle bookmarks that do not exist
+        if (!bookmark) {
+            return res.status(404).json({
+                message: 'Bookmark not found',
+            });
+        }
+
+        // Verify ownership before allowing modifications
+        if (bookmark.user.toString() !== req.user._id) {
+            return res.status(403).json({
+                message: 'Access denied',
+            });
+        }
+
+        const { title, url, description } = req.body;
+
+        // Allow updates only to permitted bookmark fields
+        if (title !== undefined) {
+            bookmark.title = title;
+        }
+
+        if (url !== undefined) {
+            bookmark.url = url;
+        }
+
+        if (description !== undefined) {
+            bookmark.description = description;
+        }
+
+        // Save the updated bookmark and run model validation
+        await bookmark.save();
+
+        return res.status(200).json(bookmark);
+    } catch (err) {
+        // Handle model validation errors
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                message: err.message,
+            });
+        }
+
+        return res.status(500).json({
+            message: 'Unable to update bookmark',
+        });
+    }
+});
+
+// Delete an existing bookmark
+router.delete('/:id', async (req, res) => {
+    try {
+        // Validate the bookmark ID
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                message: 'Invalid bookmark ID',
+            });
+        }
+
+        const bookmark = await Bookmark.findById(req.params.id);
+
+        // Handle bookmarks that do not exist
+        if (!bookmark) {
+            return res.status(404).json({
+                message: 'Bookmark not found',
+            });
+        }
+
+        // Verify ownership before allowing deletion
+        if (bookmark.user.toString() !== req.user._id) {
+            return res.status(403).json({
+                message: 'Access denied',
+            });
+        }
+
+        // Delete the authorized bookmark
+        await bookmark.deleteOne();
+
+        return res.status(200).json({
+            message: 'Bookmark deleted successfully',
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: 'Unable to delete bookmark',
+        });
+    }
+});
+
 // Export the protected bookmark router
 module.exports = router;
