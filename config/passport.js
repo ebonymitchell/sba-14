@@ -2,6 +2,7 @@ const passport = require('passport');
 const { Strategy: GitHubStrategy } = require('passport-github2');
 const { User } = require('../models');
 
+// Configure the GitHub OAuth authentication strategy
 passport.use(
     new GitHubStrategy(
         {
@@ -9,6 +10,8 @@ passport.use(
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
             callbackURL: process.env.GITHUB_CALLBACK_URL,
             scope: ['user:email'],
+            // Enable state validation to protect against CSRF attacks
+            state: true,
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
@@ -38,6 +41,7 @@ passport.use(
 
                 const emails = await response.json();
 
+                // Require a verified primary email address
                 const verifiedEmail = emails.find(
                     (email) => email.primary && email.verified
                 );
@@ -54,6 +58,7 @@ passport.use(
                 const localUser = await User.findOne({ email });
 
                 if (localUser) {
+                    // Prevent linking an account to multiple GitHub identities
                     if (localUser.githubId) {
                         return done(null, false, {
                             message: 'Account is linked to another GitHub user',
@@ -92,4 +97,5 @@ passport.use(
     )
 );
 
+// Export the configured Passport instance
 module.exports = passport;

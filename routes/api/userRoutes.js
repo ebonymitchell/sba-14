@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const passport = require('../../config/passport');
 const { User } = require('../../models');
 const { signToken } = require('../../utils/auth');
 
@@ -95,6 +96,48 @@ router.post('/login', async (req, res) => {
             message: 'Unable to log in',
         });
     }
+});
+
+// Initiate GitHub OAuth authentication
+router.get(
+    '/auth/github',
+    passport.authenticate('github', {
+        scope: ['user:email'],
+        session: false,
+    })
+);
+
+// Handle the GitHub OAuth callback
+router.get(
+    '/auth/github/callback',
+    passport.authenticate('github', {
+        session: false,
+        failureRedirect: '/api/users/auth/github/failure',
+    }),
+    (req, res) => {
+        // Generate a JWT for the authenticated GitHub user
+        const token = signToken(req.user);
+
+        // Prevent the authentication response from being cached
+        res.set('Cache-Control', 'no-store');
+
+        // Return the JWT and authenticated user information
+        return res.status(200).json({
+            token,
+            user: {
+                _id: req.user._id,
+                username: req.user.username,
+                email: req.user.email,
+            },
+        });
+    }
+);
+
+// Handle unsuccessful GitHub authentication
+router.get('/auth/github/failure', (req, res) => {
+    return res.status(401).json({
+        message: 'GitHub authentication failed',
+    });
 });
 
 // Export the user authentication router

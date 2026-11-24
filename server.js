@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const session = require('express-session');
 const db = require('./config/connection');
 const passport = require('./config/passport');
 const routes = require('./routes');
@@ -12,6 +13,21 @@ const PORT = process.env.PORT || 3000;
 // Configure middleware to parse incoming requests
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Configure temporary sessions for OAuth state validation
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 10 * 60 * 1000,
+        },
+    })
+);
 
 // Initialize Passport for GitHub authentication
 app.use(passport.initialize());
