@@ -1,5 +1,6 @@
 const { Schema, model } = require('mongoose');
 
+// Define the structure of a user's personal bookmark
 const bookmarkSchema = new Schema(
     {
         title: {
@@ -17,6 +18,7 @@ const bookmarkSchema = new Schema(
             trim: true,
             default: '',
         },
+        // Associate each bookmark with its owner
         user: {
             type: Schema.Types.ObjectId,
             ref: 'User',
@@ -24,10 +26,12 @@ const bookmarkSchema = new Schema(
         },
     },
     {
+        // Automatically track creation and modification dates
         timestamps: true,
     }
 );
 
+// Create the Bookmark model
 const Bookmark = model('Bookmark', bookmarkSchema);
 
 module.exports = Bookmark;
